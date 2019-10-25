@@ -191,7 +191,7 @@ for(zone in 1L:nZones) {
       cost <- rep(0, N)
       tryCatch(
        for(j in 1:N) {
-        print(j)
+        cat(paste0(j, " "))
         TFrun <- run(list(trainer, Cost), feed_dict = fd)
         cost[j] <- TFrun[[2]]
         if(j > 1)
