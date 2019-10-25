@@ -17,10 +17,3 @@ and the temporal window to 2006-12-27 -- 2019-03-12
 4. Choose only SST to download (theta0)
 
 5. Click download
-
-
-Running the Python program
-##########################
-
-Run visdom server in a separate terminal
-python -m visdom.server
