@@ -7,7 +7,11 @@ This GitHub page provides code for reproducing the results in the manuscript tit
 
 The arrows in the figure on the right show the output of the CNN in response to a spatio-temporal input depicted by the red contours (where transparency is used to denote time). Note how the CNN outputs a flow direction which is reasonable based on the spatio-temporal evolution of the red contours. The CNN we use is based on that of de Bezenac (2018).
 
-To reproduce the results please download this repository, and then cycle through the folders 1_, 2_, etc. running through the code in each folder in order. The code populates the img/ and intermediates/ directories, the contents of which are either used in the paper or by subsequent code.
+## Instructions
+
+To reproduce the results please download this repository. Add a subfolder data/ to 1_Preproc_data/ and put in it the SST netCDF file, which can be downloaded from [here](https://hpc.niasra.uow.edu.au/azm/SST_filter/global-analysis-forecast-phy-001-024_1551608429013.nc). Instructions on how this netCDF file was generated is available in 1_Preproc_data/README.txt.
+
+and then cycle through the folders 1_, 2_, etc. running through the code in each folder in order. The code populates the img/ and intermediates/ directories, the contents of which are either used in the paper or by subsequent code.
 
 
 ## Abstract
