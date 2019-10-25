@@ -1,0 +1,14 @@
+ Cannot make CNN match the IDE, but I don't think I ever will...
+   - changing covariance parameters to those estimated by IDE did not improve
+   - 64 instead of 32 ensembles improved a bit but not much
+   - changing taper did not improve much, leave at 0.2
+   - re-training concurrently with covariance function parameters made it MUCH worse
+   - Changing patch size to 7 did not change anything (suggest going back to 5)
+   - Smoothing is now done, which improved things slightly
+   - Zone-dependent variances improved things a bit.
+   - Zone/time-dependent variances (from the vanilla IDE) improved things quite a bit, but since the improvement was marginal I didn't do it.
+   - Doing a true Kalman update instead of an EnKF update (because we can) improved things a bit, but again marginally.
+   - Doing a different missingness (a stripe down the middle) improved things a bit, but again very marginally so
+   - Changing the measurement-error variance to 0.05 did not really change things.
+   - Doing a CNN dependent rho and sigma2 is a neat idea but it did not work well
+   - Reducing sigma2eps to 0.001 did not change anything much (tried on Zone 5)
