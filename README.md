@@ -22,9 +22,9 @@ Integro-difference equation (IDE) models capture complex spatio-temporal depende
 
 All images can be viewed in the img/ subdirectories in this repository. There are also two animations which can be viewed:
 
-1. An animation of the SST product in the North Atlantic [link](http://htmlpreview.github.com/?https://github.com/andrewzm/deepIDE/tree/master/1_Preproc_data/anim/SST_anim.html)
+1. An animation of the SST product in the North Atlantic ([link](http://htmlpreview.github.com/?https://github.com/andrewzm/deepIDE/blob/master/1_Preproc_data/anim/SST_anim.html))
 
-2. An animation of predictions and forecasts in Zone 1 for out-of-sample data [link](http://htmlpreview.github.com/?https://github.com/andrewzm/deepIDE/blob/master/5_Extract_Results/anim/SST_filter.html)
+2. An animation of predictions and forecasts in Zone 1 for out-of-sample data ([link](http://htmlpreview.github.com/?https://github.com/andrewzm/deepIDE/blob/master/5_Extract_Results/anim/SST_filter.html))
 
 ## Software versions and hardware used to generate the results
 
