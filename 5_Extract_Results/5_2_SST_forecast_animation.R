@@ -73,9 +73,8 @@ SST_t <- function(i) {
 }
 
 gen_anim <- function() {
-  #for(i in seq_along(taxis_df$t)){  # for each time point
-  for(i in 1:5){
-    if(i > 3)
+  for(i in seq_along(taxis_df$t)){  # for each time point
+   if(i > 3)
       SST_t(i)            # plot data at this time point
   }
 }
