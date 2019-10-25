@@ -1,13 +1,14 @@
 # Deep Integro-Difference Equation Models for Spatio-Temporal Forecasting
 
+<img align="right" src="https://github.com/andrewzm/deepIDE/blob/master/2_Fit_CNN_IDE/img/BallResults1.png" alt="drawing" width="500"/>
+
+
 This GitHub page provides code for reproducing the results in the manuscript titled *Deep Integro-Difference Equation Models for Spatio-Temporal Forecasting*. The manuscript describes the use of Convolution Neural Networks (CNNs) to learn about the dynamic evolution of environmental processes. Once the CNN is trained using analyses data (i.e., full, complete, data) of a certain phenomenon, it can be used within statistical models for analysing or forecasting other environmental phenomena that exhibit similar physical behaviour.
 
 To reproduce the results please download this repository, and then cycle through the folders 1_, 2_, etc. running through the code in each folder in order. The code populates the img/ and intermediates/ directories, the contents of which are either used in the paper or by subsequent code.
 
 
 ## Abstract
-
-<img align="right" src="https://github.com/andrewzm/deepIDE/blob/master/2_Fit_CNN_IDE/img/BallResults1.png" alt="drawing" width="200"/>
 
 Integro-difference equation (IDE) models capture complex spatio-temporal dependencies by modelling the conditional dependence between the spatial process at a future time point and the process at the present time point through a linear integral operator. Nonlinearity or temporal dependence in the dynamics can be captured by allowing the parameters appearing inside the operator to vary temporally, or by re-fitting a model with a temporally-invariant operator at each time point in a sliding window. Both procedures tend to be excellent for prediction purposes over small time horizons, but are generally time-consuming and, crucially, do not provide a global prior model for the temporally-varying dynamics that is realistic.  Here, we tackle these two issues by using a deep convolution neural network (CNN) in a hierarchical statistical IDE framework, where the CNN is designed offline to extract process dynamics from the process' past behaviour. Once the CNN is fitted, probabilistic forecasting can be done extremely quickly online using an ensemble Kalman filter with no requirement for repeated parameter estimation. We conduct an experiment where we train and evaluate the model using 13 years of daily sea-surface temperature data in 19 regions of the North Atlantic Ocean. Forecasts are seen to be well calibrated, and comparable with what can be obtained with the vanilla IDE model where operator parameters are re-estimated using maximum likelihood at each time step. A key advantage of our approach is that the CNN provides a global prior model for the dynamics that is realistic, interpretable, and computationally efficient. We show the versatility and wide applicability of the approach by successfully producing 10-minute nowcasts of weather radar reflectivities in Sydney using the same model that was trained on daily data of sea-surface temperature data in the North Atlantic Ocean.
 
