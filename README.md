@@ -11,7 +11,7 @@ The arrows in the figure on the right show the output of the CNN in response to 
 
 To reproduce the results please download this repository. Add a subfolder data/ to 1_Preproc_data/ and put in it the SST netCDF file, which can be downloaded from [here](https://hpc.niasra.uow.edu.au/azm/global-analysis-forecast-phy-001-024_1551608429013.nc). Instructions on how this netCDF file was generated is available in 1_Preproc_data/README.txt.
 
-and then cycle through the folders 1_, 2_, etc. running through the code in each folder in order. The code populates the img/ and intermediates/ directories, the contents of which are either used in the paper or by subsequent code.
+After putting in the data, cycle through the folders 1_, 2_, etc. running through the code in each folder in order. The code populates the img/ and intermediates/ directories, the contents of which are either used in the paper or by subsequent code.
 
 
 ## Abstract
