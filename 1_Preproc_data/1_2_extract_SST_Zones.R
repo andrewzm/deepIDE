@@ -13,6 +13,9 @@ library("ncdf4")
 library("reticulate")
 source("../common/utils.R")
 
+## Create intermediates directory
+if(!(dir.exists("intermediates"))) dir.create("intermediates")
+
 ## Load data and extract variables
 sst <- ncdf4::nc_open("data/global-analysis-forecast-phy-001-024_1551608429013.nc")
 sstvec <- ncdf4::ncvar_get(sst, "thetao")

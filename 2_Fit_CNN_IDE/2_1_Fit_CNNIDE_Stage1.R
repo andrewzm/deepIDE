@@ -13,6 +13,9 @@ library("tidyr")
 library("R.utils")
 sourceDirectory("../common") 
 
+## Create intermediates directory
+if(!(dir.exists("intermediates"))) dir.create("intermediates")
+
 ############################
 ## Part 1: Construct the CNN
 ############################

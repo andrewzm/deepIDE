@@ -16,6 +16,10 @@ library("lubridate")
 library("R.utils")
 sourceDirectory("../common") 
 
+## Create intermediates directory
+if(!(dir.exists("intermediates"))) dir.create("intermediates")
+
+            
 ## Analysing radar data or SST data?
 radar_data <- FALSE
 

@@ -8,6 +8,9 @@
 library("gstat")
 library("sp")
 
+## Create intermediates directory
+if(!(dir.exists("intermediates"))) dir.create("intermediates")
+
 for(zone in 1:19L) {
   load(paste0("../3_Analyse_Data_CNNIDE/intermediates/Results_CNNIDE_Zone_", zone, ".rda"))
   taxis <- 3:nrow(taxis_df)    
