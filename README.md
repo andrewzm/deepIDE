@@ -5,6 +5,8 @@
 
 This GitHub page provides code for reproducing the results in the manuscript titled *Deep Integro-Difference Equation Models for Spatio-Temporal Forecasting*. The manuscript describes the use of Convolution Neural Networks (CNNs) to learn about the dynamic evolution of environmental processes. Once the CNN is trained using analyses data (i.e., full, complete, data) of a certain phenomenon, it can be used within statistical models for analysing or forecasting other environmental phenomena that exhibit similar physical behaviour.
 
+The arrows in the figure on the right show the output of the CNN in response to a spatio-temporal input depicted by the red contours (where transparency is used to denote time). Note how the CNN outputs a flow direction which is reasonable based on the spatio-temporal flow. The CNN we use is based on that of de Bezenac (2018).
+
 To reproduce the results please download this repository, and then cycle through the folders 1_, 2_, etc. running through the code in each folder in order. The code populates the img/ and intermediates/ directories, the contents of which are either used in the paper or by subsequent code.
 
 
@@ -70,3 +72,9 @@ Intel Core i9-7900X @ 3.30GHz
 GeForce GTX 1080Ti
 
 64GB RAM
+
+
+## References
+
+de Bezenac, E., Pajot, A., Gallinari, P., 2018. Deep learning for physical processes: Incorporating
+prior scientic knowledge. In: Proceedings of ICLR 2018. Vancouver, Canada.
