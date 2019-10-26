@@ -10,11 +10,11 @@ library("tensorflow")
 library("R.utils")
 sourceDirectory("../common")
 
+## Analyse SST or radar data?
 radar_data <- FALSE
 
+## Use nlags = 2 to match CNNIDE
 nlags <- 2L
-W <- H <- 64L
-sqrtN_Basis <- 8L        # sqrt of number of basis functions for IDE vector fields
 if(radar_data) {
   nZones <- 1L
   nObs <- 4096L
@@ -25,13 +25,11 @@ if(radar_data) {
   sigma2e <- 0.01
 }
 
+## Set up IDE graph
 N <- 200                 # number of gradient descents
-s1 <- seq(0, 1, length.out = W)  # grid points for s1
-s2 <- seq(0, 1, length.out = H)  # grid points for s2
 ds1 <- mean(diff(s1))            # s1 spacings
 ds2 <- mean(diff(s2))            # s2 spacings
 ds <- sqrt(ds1 * ds2)            # area of pixel
-sgrid <- expand.grid(s1 = s1, s2 = s2)  # spatial grid in long format
 sgrid_tf <- tfconst(as.matrix(sgrid))   # spatial grid
 
 kernelside <- seq(0, 1, length.out = sqrtN_Basis)      # locs of kernel basis ..
@@ -84,6 +82,7 @@ d2 <- tf$square(sgrid_tf[, 2] - sgrid_tf[, 2, drop = FALSE])
 D <- tf$sqrt(d1 + d2)
 SIGMA <- Matern32(sigma2, rho, D)
 
+## Create forecasted and filtered vectors/matrices
 Yforecast <- Yfilter <- list()
 Covforecast <- Covfilter <- list()
 Ytilde <- Kalman <- S <- Sinv <- list()
@@ -130,7 +129,10 @@ zmat <- array(0, dim = c(nlags + 1, nObs, 1))
 Cobsmat <- array(0, dim = c(nlags + 1, nObs, W*H))
 log_sigma2_IDE <- log_rho_IDE <- list()
 
+## For each zone
 for(zone in 1L:nZones) {
+
+  ## Load data
   if(!radar_data) {
     load(paste0("../3_Analyse_Data_CNNIDE/intermediates/Results_CNNIDE_Zone_", zone, ".rda"))
     load(paste0("../3_Analyse_Data_CNNIDE/intermediates/kinit_zone", zone, ".rda"))
@@ -141,7 +143,8 @@ for(zone in 1L:nZones) {
   taxis <- taxis_df$idx
   results_IDE <- list()
   log_sigma2_IDE[[zone]] <- log_rho_IDE[[zone]] <- NA
-  
+
+  ## For each time point
   for(i in seq_along(taxis)[-(1:nlags)]) {
 
       zmat <- array(
@@ -189,6 +192,8 @@ for(zone in 1L:nZones) {
                  Yinit = Yinit_vec,     # Yinit does not change
                  Covinit = Covinit_mat) # Covinit does not change
       cost <- rep(0, N)
+
+      ## Sometimes ML may not converge, if so ignore results.
       tryCatch(
        for(j in 1:N) {
         cat(paste0(j, " "))
@@ -206,14 +211,16 @@ for(zone in 1L:nZones) {
                         Yforecast= Yforecast,
                         Covforecast = Covforecast),
                         feed_dict = fd)
-                        
+
+      ## Get the kernel parameters to be initial conditions for next time point
       u_pars <- TFres$flow_coeffs[, 1]
       v_pars <- TFres$flow_coeffs[, 2]
       Dpars <- as.numeric(TFres$diff_coeffs)
 
       log_sigma2_IDE[[zone]][i] <- run(log_sigma2)
       log_rho_IDE[[zone]][i] <- run(log_rho)
-      
+
+      ## Compile results
       if(i < length(taxis))
           results_IDE[[i + 1]] <- 
               data.frame(fcast_mu_IDE = as.numeric(TFres$Yforecast[[nlags+2]]),
@@ -231,7 +238,8 @@ for(zone in 1L:nZones) {
       cat(paste0("IDE Zone ", zone, " Time point ", i, "\n"))
       
   }
-  
+
+  ## Save results
   if(radar_data) {
     save_fname1 <- paste0("intermediates/Results_fullrank_IDE_Radar.rda")
     save_fname2 <- paste0("intermediates/IDEcovparsRadar.rda")

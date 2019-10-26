@@ -1,3 +1,10 @@
+#############################################
+## Title: Analyse results from radar data set
+## Date: 22 October 2019
+## Author: Andrew Zammit-Mangion
+#############################################
+
+## Load libraries and source code
 library("animation")
 library("dplyr")
 library("ggplot2")

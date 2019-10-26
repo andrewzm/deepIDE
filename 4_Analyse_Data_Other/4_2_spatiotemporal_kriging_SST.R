@@ -52,7 +52,6 @@ run_negloglik_tf_optim <- function(logtheta, sobs, Z) {
 sgrid <- all_data$sgrid
 predgrid_tf <- tf$placeholder(dtype = "float32", shape = list(as.integer(nrow(sgrid) * (nlags + 2)),
                                                               3L))
-
 ## Prediction equations 
 SIGMAstarobs <- covfun_tf(sigma2_tf, tau_tf, anis, predgrid_tf, sobs_tf)
 SIGMAinv_Z_tf <- tf$matrix_solve(tf$transpose(L_tf), LinvZ_tf)
@@ -63,11 +62,14 @@ Temp2 <- tf$multiply(Temp1, SIGMAstarobs)
 Temp3 <- tf$reduce_sum(Temp2, 1L)
 Ypredse_tf <- tf$sqrt(sigma2_tf - Temp3)
 
+## For each zone
 for(zone in 1:nZones) {
 
+    ## Load results/data and initialise
     load(paste0("../3_Analyse_Data_CNNIDE/intermediates/Results_CNNIDE_Zone_", zone, ".rda"))
     results_STK <- list()
-    
+
+    ## For each time point
     for(i in seq_along(taxis)) {
      if(i > nlags) {
 
@@ -77,16 +79,11 @@ for(zone in 1:nZones) {
         sobs <- as.data.frame(as.matrix(C) %*% as.matrix(all_data$sgrid))
         sobs$z <- z
         sobs$t <- rep(taxis[i - nlags] : taxis[i], each = 1024)
-
         LM <- lm(z ~ s1 + s2, data = sobs)
         residuals <- LM$residuals
 
-        if(i <= nlags + 1) {
-          initpars <- rep(log(0.5), 3)
-        } else {
-          initpars <-  theta$par
-        }
-
+        ## Find the ML estimates
+        initpars <- rep(log(0.5), 3)
         t1 <- Sys.time()
         theta <- optim(par = initpars,
                        fn = run_negloglik_tf_optim,
@@ -118,10 +115,10 @@ for(zone in 1:nZones) {
                scale_fill_gradientn(colours = nasa_palette) + theme_bw()
           ggsave(g, filename = paste0("img/STK_Zone", zone,"_Time", i, ".png"))
         }
-        
         presentgrid <- filter(predgrid, t == taxis[i])
         fcastgrid <- filter(predgrid, t == taxis[i + 1])
         
+        ## Compile results
         if(i < length(taxis))
             results_STK[[i + 1]] <- data.frame(fcast_mu_STK = fcastgrid$Ypred,
                                                fcast_sd_STK = fcastgrid$Ypredse)
@@ -137,5 +134,7 @@ for(zone in 1:nZones) {
         cat(paste0("STK Zone ", zone, " Time point ", i, "\n"))
      }
     }
+
+    ## Save results
     save(results_STK, file = paste0("intermediates/Results_STK_Zone_", zone, ".rda"))
 }
