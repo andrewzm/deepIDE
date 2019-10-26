@@ -12,9 +12,12 @@ library("sp")
 if(!(dir.exists("intermediates"))) dir.create("intermediates")
 
 for(zone in 1:19L) {
+
+  ## Load data in CNN results data file
   load(paste0("../3_Analyse_Data_CNNIDE/intermediates/Results_CNNIDE_Zone_", zone, ".rda"))
   taxis <- 3:nrow(taxis_df)    
   results_kriging <- list()
+
   ## Spatial-only kriging
   for(i in taxis) {
     Z <- all_data$Z[[i]]
@@ -22,6 +25,8 @@ for(zone in 1:19L) {
     sobs <- as.data.frame(as.matrix(C) %*% as.matrix(all_data$sgrid))
     sobs$Z <- Z
     coordinates(sobs) <- ~s1 + s2
+
+    ## Fit semivariogram
     vv <- variogram(object = Z ~ s1 + s2,
                      data = sobs,
                      cutoff = 0.7)
@@ -32,7 +37,8 @@ for(zone in 1:19L) {
     sgrid <- all_data$sgrid
     coordinates(sgrid) <- ~s1 + s2
     gridded(sgrid) <- TRUE
-    
+
+    ## Prediction
     pred_krige <- krige0(Z ~ s1 + s2,
                         locations = ~s1 + s2,
                         data = sobs,
@@ -44,5 +50,7 @@ for(zone in 1:19L) {
                                      filter_sd_kriging = as.numeric(pred_krige$var))
     cat(paste0("Kriging Zone ", zone, " Time point ", i, "\n"))
   }
+
+  ## Save results
   save(results_kriging, file = paste0("intermediates/Results_kriging_Zone_", zone, ".rda"))
 }

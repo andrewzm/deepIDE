@@ -1,3 +1,11 @@
+#######################################################
+## Title: Plot one sequence of (Y_{t}, Y_{t+1},
+##        Y_{t+2}, Y_{t+3}) and Yhat_{t+3} from the CNN
+##        training the data and the validation data
+## Date: 22 October 2019
+## Author: Andrew Zammit-Mangion
+######################################################
+
 ## Load libraries and functions
 library("tensorflow")
 library("dplyr")
@@ -5,7 +13,7 @@ library("ggplot2")
 library("R.utils")
 sourceDirectory("../common")
 
-## Plot some sample images from the trained CNN
+## Construc the CNN
 CNNgraph <- createCNNgraph(W = W,  H = H,
                            N_Channels = N_Channels,
                            N_Filters = N_Filters,
@@ -15,6 +23,7 @@ CNNgraph <- createCNNgraph(W = W,  H = H,
                            border_mask = border_mask)
 list2env(CNNgraph, envir = .GlobalEnv)
 
+## Attach trained weights
 load(file = "./intermediates/SSTIDE_weights_TF.rda")
 run <- tf$Session()$run
 All_Vars_tf <- tf$trainable_variables(scope = NULL)

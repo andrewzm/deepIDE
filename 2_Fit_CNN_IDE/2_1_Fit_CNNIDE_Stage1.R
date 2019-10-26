@@ -16,9 +16,7 @@ sourceDirectory("../common")
 ## Create intermediates directory
 if(!(dir.exists("intermediates"))) dir.create("intermediates")
 
-############################
-## Part 1: Construct the CNN
-############################
+## Construct the CNN
 CNNgraph <- createCNNgraph(W = W,  H = H,
                            N_Channels = N_Channels,
                            N_Filters = N_Filters,
@@ -28,9 +26,7 @@ CNNgraph <- createCNNgraph(W = W,  H = H,
                            border_mask = border_mask)
 list2env(CNNgraph, envir = .GlobalEnv)
 
-######################################################
-## Part 2: Load data and massage into required formats
-######################################################
+## Load data and massage into required formats
 load("../1_Preproc_data/intermediates/TrainingData3D.rda")
 load("../1_Preproc_data/intermediates/TrainingDataFinals.rda")
 load("../1_Preproc_data/intermediates/TrainingDataPreds.rda")
@@ -48,11 +44,8 @@ load("../1_Preproc_data/intermediates/TrainingDataPreds.rda")
 ## in this data set is of 2006-12-30, and goes up to 2019-03-12.
 
 
-###############################
-## Part 3.1: Training the graph
-###############################
+## Train the graph
 set.seed(1)                                         # set seed
-source("../common/CNN_fit_vars.R")
 nepochs <- 30                                       # 30 epochs
 nsteps_per_epoch <- floor(N_Data_Train / N_Batch)   # number of steps per epoch (4275)
 init_learning_rate <- 0.00005                       # learning rate for CNN weights

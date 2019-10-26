@@ -3,6 +3,7 @@
 ## Date: 22 October 2019
 ## Author: Andrew Zammit-Mangion
 ##########################################################
+
 library("tensorflow")
 library("dplyr")
 library("ggplot2")
@@ -33,6 +34,8 @@ convfilter_u <- tf$trainable_variables(scope = NULL)[[1]]
 convfilter_v <- tf$transpose(convfilter_u, perm = c(1L, 0L, 2L, 3L))
 conv1 <- conv(data_in, 3L, N_Filters, convwts = convfilter_v) # 32 x 32 x 16
 set.seed(5)
+
+## Do ten sequences
 for(i in 1:10) {
   
   ## Centres,directions, and SD of GRBF
@@ -42,7 +45,7 @@ for(i in 1:10) {
   ds2 <- runif(1, max = 0.1) - 0.05
   dD <- 1
   
-  ## Create the space-time 
+  ## Create the space-time GRBFs (balls)
   ball <- mutate(sgrid, 
                  z1 = dnorm(s1, s1c, sqrt(0.001))*dnorm(s2, s2c, sqrt(0.001)),
                  z2 = dnorm(s1, s1c - ds1, sqrt(0.001*(dD^2)))*
@@ -61,32 +64,31 @@ for(i in 1:10) {
                mutate(value = as.numeric(XX))
   ggplot(filterout) + geom_tile(aes(s1, s2, fill = value)) + facet_wrap(~channel) +
       scale_fill_gradientn(colours = nasa_palette)
-  
+
+  ## Create quiver plots for the flow direction from CNN
   sgrid$U <- as.numeric(run(u_long, feed_dict = fd))
   sgrid$V <- as.numeric(run(v_long, feed_dict = fd))
   sgrid$D <- as.numeric(run(D_long, feed_dict = fd))
   s1sub <- unique(sgrid$s1)[seq(1,64,by = 4)]
   s2sub <- unique(sgrid$s2)[seq(1,64,by = 4)]
-  g1 <- ggplot(ball) + geom_contour(aes(s1, s2, z = z1), alpha = 0.2, colour = "black") +
-    geom_contour(aes(s1, s2, z = z2), alpha = 0.5, colour = "black") +
-    geom_contour(aes(s1, s2, z = z3), colour = "black") + theme_bw() +
-    coord_fixed(xlim = c(0,1), ylim = c(0,1))
-  g2 <- ggplot(filter(sgrid, s1 %in% s1sub & s2 %in% s2sub)) + 
+
+  ## Flow map
+  g1 <- ggplot(filter(sgrid, s1 %in% s1sub & s2 %in% s2sub)) + 
     geom_contour(data = ball, aes(s1, s2, z = z1), alpha = 0.2, colour = "red") +
     geom_contour(data = ball, aes(s1, s2, z = z2), alpha = 0.5, colour = "red") +
     geom_contour(data = ball, aes(s1, s2, z = z3), colour = "red") +
-    geom_quiver(aes(s1, s2, u = -U, v = -V,# colour = atan2(-V, -U), 
+    geom_quiver(aes(s1, s2, u = -U, v = -V,
                     colour = (sqrt(U^2 + V^2))), vecsize = 1) + 
     scale_colour_distiller(palette = "Greys", trans = "reverse", name = "Amplitude") +
     theme_bw() + coord_fixed() + xlab(expression(s[1])) + 
     ylab(expression(s[2])) + theme(text = element_text(size = 18)) +
-    #scale_colour_distiller(name = "Angle (deg)") +
     theme(legend.position = NULL)
-  g3 <- ggplot(sgrid) + geom_tile(aes(s1, s2, fill = D)) + 
+
+  ## Diffusion map
+  g2 <- ggplot(sgrid) + geom_tile(aes(s1, s2, fill = D)) + 
     scale_fill_gradientn(colours = nasa_palette) + coord_fixed() +
     theme_bw() 
   
-  #gall <- grid.arrange(g1,g2,g3, nrow = 1, widths = c(0.3, 0.3, 0.37))
-  #gall <- grid.arrange(g1,g2, nrow = 1, widths = c(0.45, 0.55))
-  ggsave(g2, file = paste0("img/BallResults", i, ".png"), width = 8, height = 6)
+  ## Save g1 for use in paper
+  ggsave(g1, file = paste0("img/BallResults", i, ".png"), width = 8, height = 6)
 }

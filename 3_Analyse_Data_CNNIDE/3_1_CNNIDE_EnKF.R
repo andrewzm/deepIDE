@@ -45,6 +45,7 @@ for(i in 1:length(All_Vars_tf)) {
 ## Load covariance function parameters from Stage 2
 load("../2_Fit_CNN_IDE/intermediates/SST_cov_pars.rda")
 
+## Load radar or SST data
 if(radar_data) {
   load("../1_Preproc_data/intermediates/Radar_data.rda")
   nT <- dim(radar_array)[1]
@@ -59,7 +60,7 @@ if(radar_data) {
   load("../1_Preproc_data/intermediates/TrainingDataFinals.rda")
 }
 
-### 6.1: Initialise
+### Initialise
 if(radar_data) {
   nObs <- 4096L 
   nParticles <- 32L               # 32 particles
@@ -77,6 +78,7 @@ taper_l <- 0.2
 s1 <- seq(0, 1, length.out = W)  # grid points for s1
 s2 <- seq(0, 1, length.out = H)  # grid points for s2
 sgrid <- expand.grid(s1 = s1, s2 = s2)  # spatial grid in long format
+
 ### Set up  EnKF graph for doing EnKF on GPU
 
 ## Compute cholesky factor of Sigma
@@ -112,11 +114,9 @@ normvars_obs1 <- normvars_obs2 <- tf$placeholder(dtype = "float32", shape = c(nP
 Z_tf <- tf$placeholder(dtype = "float32", shape = list(nObs, 1L))  # tile the observations
 Z_tf_tiled  <- tf$expand_dims(Z_tf, 0L)
 Z_tf_tiled  <- tf$tile(Z_tf_tiled, c(thisN_Batch, 1L, 1L))
-## Z_tf_tiled  <- Z_tf_tiled + sqrt(sigma2e)*normvars_obs1  ## Some people advocate noisying the observations?
 Zsim_tf <- tf$linalg$matmul(C_tf_tiled, Ypred_noisy) +  # simulate the observations
   sqrt(sigma2e)*normvars_obs2
 Ypred_updated <- Ypred_noisy + tf$linalg$matmul(K_tf_tiled, Z_tf_tiled - Zsim_tf)  # update
-
 
 ## Smooth1
 Ysmooth_COV_untapered1 <- tf_cov(tf$squeeze(data_current_long, 2L),
@@ -160,13 +160,15 @@ Kalman <- tf$matmul(tf$matmul(Covforecast, tf$transpose(C_tf)), Sinv)
 Yfilter <- tf$matmul(K_IDE0, Yinit) + tf$matmul(Kalman, Ytilde)
 Covfilter <- tf$matmul((Imat - tf$matmul(Kalman, C_tf)), Covforecast)
 
-## for(zone in 1:nZones) {
+## For each zone
 for(zone in 1L:nZones) {
   
-  ### 6.3 Generate data in each zone
   if(!radar_data) {
+        
+    ## If SST data, then load the zone-specific covariances 
     run(tf$assign(log_sigma2, log_sigma2_zone_all[[zone]]))
     run(tf$assign(log_rho, log_rho_zone_all[[zone]]))
+
     set.seed(zone)                  # set seed
     
     ## Set time axis
@@ -183,15 +185,14 @@ for(zone in 1L:nZones) {
                        zone = 1,
                        currentdate = unique(time(radar_STIDF)))
   }
-  
+
+  ## Initialise data vectors and incidence matrices
   C <- z_df_list <- Z <- list()   # list of data and obs. matrices
   results <- list()               # list of results
   
-  ## Simulate data with measurement error
+  ## Simulate data with measurement error (if SST, otherwise just return data if radar data)
   ## Store data in long format (Z) and data frame (z_df_list)
   for(i in seq_along(taxis)) {
-    ## striped <- setdiff(1:(W*H), which(sgrid[,1] > 0.45 & sgrid[,1] < 0.55))
-    ## obsidx <- sample(striped, nObs)     # sample the observations
     obsidx <- sample(1:(W*H), nObs) 
     C[[i]] <- sparseMatrix(i = 1:nObs,   # measurement-mapping matrix
                            j = obsidx, 
@@ -204,11 +205,11 @@ for(zone in 1L:nZones) {
   
   ## Collapse z_df_list into one long data frame
   z_df <- Reduce("rbind", z_df_list)
-  #ggplot(z_df) + geom_point(aes(s1, s2, colour = z)) + facet_wrap(~t) +
-  #    scale_colour_gradientn(colours = nasa_palette)
+  ## ggplot(z_df) + geom_point(aes(s1, s2, colour = z)) + facet_wrap(~t) +
+  ##    scale_colour_gradientn(colours = nasa_palette)
   
   
-  ### 6.4: Initialise the first particles and run the EnkF for each zone in test set
+  ## Initialise the first particles and run the EnkF for each zone in test set
   
   ## Pframe contains the current `set' of three data points needed for state
   Pframe <- array(0, dim = c(nParticles, W, H, tau))
@@ -232,23 +233,31 @@ for(zone in 1L:nZones) {
   Yfilter_prev_step <- matrix(apply(Pframe[,,,tau,drop=FALSE], 2:4, mean), W*H, 1)
   Covfilter_prev_step <- SCOV
   
-  
+  ## Now run the EnKF on the simulated data
   ## For each time point
   for(i in seq_along(taxis)) {
     
-    ##warning("Using saved var values from IDE run") ## Improves Zone 6
-    ##load(paste0("Results/IDEcovparsZone", zone, ".rda"))
-    ##run(tf$assign(log_sigma2, log_sigma2_IDE[[zone]][i]))
-    ##run(tf$assign(log_rho, log_rho_IDE[[zone]][i]))
+    ## The following code indicates to us that assuming the variances are
+    ## are temporally invariant is detrimental to prediction. If we
+    ## use those estimated from the full-rank IDE, predictions improve
+    ## considerably
+      
+    ## warning("Using saved var values from IDE run") ## Improves Zone 6
+    ## load(paste0("Results/IDEcovparsZone", zone, ".rda"))
+    ## run(tf$assign(log_sigma2, log_sigma2_IDE[[zone]][i]))
+    ## run(tf$assign(log_rho, log_rho_IDE[[zone]][i]))
     
     cat(paste0("Filtering Zone ", zone, " Time point ", i, "\n"))
     
     ## Ignore the first three time points (init. condition)
     if(i > tau) {
       
-      ## Try a "DOUBLE" filter
+      ## Since the system is nonlinera, run the EnKF a couple of times,
+      ## on each sequence to help improve the inferred dynamics
       for(kk in 1:2) {
-        ## Update using the current Pframe        
+
+        ## Update using the current Pframe
+        ## Note that "tau" corresponds to "t - 1", "tau - 1" to "t - 2", etc.
         fd <- dict(data_in = Pframe,
                    data_current = Pframe[,,,tau],
                    data_previous = Pframe[,,,tau - 1],
@@ -262,56 +271,17 @@ for(zone in 1L:nZones) {
         ParticleUpdates <- run(list(Ypred_noisy, Ypred_updated, Ysmooth1, Ysmooth2),
                                feed_dict = fd)
         
-        
-        
         ## Do not use smoothed data when forecasting just do it for kk == 1
         if(kk == 1) ParticleForecasts <- ParticleUpdates[[1]]
         ParticlePreds <- ParticleUpdates[[2]]
         ParticleSmooth1 <- ParticleUpdates[[3]]
         ParticleSmooth2 <- ParticleUpdates[[4]]
-        
+
         Pframe[,,,tau] <-  array(c(ParticleSmooth1), c(nParticles, W, H, 1))
         Pframe[,,,tau - 1] <-  array(c(ParticleSmooth2), c(nParticles, W, H, 1))
-        
-        ## if(i > (tau + 1)) {
-        if(0) {
-          Pframe_old[,,,tau] <- Pframe[,,,tau - 1]
-          fd <- dict(data_in = Pframe_old,
-                     data_current = Pframe_old[,,,tau],
-                     data_previous = Pframe_old[,,,tau - 1],
-                     C_tf = as.matrix(C[[i - 1]]),
-                     Z_tf = as.matrix(Z[[i - 1]]),
-                     normvars_process = array(rnorm(W*H*nParticles), dim = c(nParticles, W*H, 1L)),
-                     normvars_obs1 = array(rnorm(nObs*nParticles), dim = c(nParticles, nObs, 1L)),
-                     normvars_obs2 = array(rnorm(nObs*nParticles), dim = c(nParticles, nObs, 1L)))
-          
-          ParticleUpdates <- run(list(Ypred_noisy, Ypred_updated, Ysmooth1, Ysmooth2),
-                                 feed_dict = fd)
-          ParticlePreds <- ParticleUpdates[[2]]
-          ParticleSmooth1 <- ParticleUpdates[[3]]
-          ParticleSmooth2 <- ParticleUpdates[[4]]
-          
-          Pframe_old[,,,tau] <- Pframe[,,,tau - 1] <- array(c(ParticleSmooth1), c(nParticles, W, H, 1))
-          Pframe_old[,,,tau - 1] <- Pframe[,,,tau - 2] <-  array(c(ParticleSmooth2), c(nParticles, W, H, 1))
-        }
       }
       
-      
-      
-      ## Do a Kalman filter "correction" taking into account the latest
-      ## estimates for the dynamics (i.e., assuming theta is based on Y up to time t not t-1)
-      ## Pframe_mean <- Pframe[1,,,,drop =FALSE]
-      ## Pframe_mean[1,,,] <- apply(Pframe, 2:4, mean)
-      ## fd2 <- dict(data_in = Pframe_mean,
-      ##            Yinit = Yfilter_prev_step,
-      ##            Covinit = Covfilter_prev_step,
-      ##            C_tf = as.matrix(C[[i]]),
-      ##            Z_tf = as.matrix(Z[[i]]))
-      ## KF_results <-  run(list(Yfilter, Covfilter), feed_dict = fd2)
-      ## Yfilter_prev_step <- matrix(c(KF_results[[1]]), W*H, 1)
-      ## Covfilter_prev_step <- KF_results[[2]]
-      
-      ## Redo with Pframe2 for two-day ahead forecast
+      ## Redo with Pframe2 for two-day ahead forecast (same time point, just with un-updated ensemble at t-1)
       if(two_step_fcasts) {
         fd2 <- dict(data_in = Pframe2,
                     data_current = Pframe2[,,,tau],
@@ -320,35 +290,32 @@ for(zone in 1L:nZones) {
       }
       
       ## Shift the particles backwards to produce a new `Pframe'
-      Pframe_old <- Pframe  
+      ## Don't really need to do this as updating smoothed components below
       for(j in 1:(tau - 1)) {
         Pframe[,,,j] <- Pframe[,,,j + 1]
         if(two_step_fcasts) Pframe2[,,,j] <- Pframe2[,,,j + 1]    
       }
       
       ## New particles (filtered ones) at tau
-      if(two_step_fcasts) Pframe2[,,,tau] <-  array(c(ParticleForecasts),
-                                                    c(nParticles, W, H, 1))
       Pframe[,,,tau] <-  array(c(ParticlePreds),
                                c(nParticles, W, H, 1))
+      if(two_step_fcasts) Pframe2[,,,tau] <-  array(c(ParticleForecasts),
+                                                    c(nParticles, W, H, 1))
       
       ## Smoothed particles at tau - 1
-      if(two_step_fcasts) Pframe2[,,,tau - 1] <- Pframe[,,,tau - 1]
-      Pframe[,,,tau - 1] <-  array(c(ParticleSmooth1),
+      if(two_step_fcasts) Pframe2[,,,tau - 1] <- Pframe[,,,tau - 1] # filtered
+      Pframe[,,,tau - 1] <-  array(c(ParticleSmooth1),              # smoothed
                                    c(nParticles, W, H, 1))
       
       ## Smoothed particles at tau - 2
-      if(two_step_fcasts) Pframe2[,,,tau - 2] <- Pframe[,,,tau - 2]
-      Pframe[,,,tau - 2] <-  array(c(ParticleSmooth2),
+      if(two_step_fcasts) Pframe2[,,,tau - 2] <- Pframe[,,,tau - 2] # smoothed1
+      Pframe[,,,tau - 2] <-  array(c(ParticleSmooth2),              # smoothed2
                                    c(nParticles, W, H, 1))
       
-      
-      
+      ## Collect results into results data frame
       results[[i]] <-
         data.frame(filter_mu = apply(ParticlePreds, 2, mean),
                    filter_sd = apply(ParticlePreds, 2, sd),
-                   #filter_mu = c(KF_results[[1]]),
-                   #filter_sd = sqrt(diag(KF_results[[2]])),
                    fcast_mu = apply(ParticleForecasts, 2, mean),
                    fcast_sd = apply(ParticleForecasts, 2, sd),
                    truth = as.numeric(dfinal[taxis[i],,]),
@@ -360,13 +327,15 @@ for(zone in 1L:nZones) {
         results[[i]]$fcast_sd2 = apply(ParticleForecasts2, 2, mean)
       }
       
-      
+      ## Save wind directions for a specific zone
       if(zone == 11 & i %in% 10:12)
         save(Pframe, ParticlePreds, ParticleForecasts,
              nParticles,
              file = paste0("intermediates/data_for_dir_plots_Zone11_i",
                            i, ".rda"))
-      
+
+      ## Save the kernel parameters at the first time point for use as initial conditions
+      ## with the full rank IDE  
       if(i == (tau + 1)) {
         u_pars <- run(flow_coef, feed_dict = fd)[, 1:sqrtN_Basis^2, ] %>% apply(2, mean)
         v_pars <- run(flow_coef, feed_dict = fd)[, -(1:sqrtN_Basis^2), ] %>% apply(2, mean)
@@ -378,11 +347,10 @@ for(zone in 1L:nZones) {
         }
         save(u_pars, v_pars, Dpars, file = kernel_fname)
       }
-      
-      
     }
-    
   }
+
+  ## Save the data and the results (data is also used by the other algorithms)
   all_data <- list(Z = Z, C = C, sgrid = sgrid, zone = zone, taxis_df = taxis_df)
   if(!radar_data) {
     save_fname = paste0("intermediates/Results_CNNIDE_Zone_", zone, ".rda")
