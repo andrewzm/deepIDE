@@ -45,7 +45,8 @@ load("../1_Preproc_data/intermediates/TrainingDataPreds.rda")
 
 
 ## Train the graph
-set.seed(1)                                         # set seed
+set.seed(1)                                         # set R seed
+set_tf_seed(1L)                                     # set TF seed
 nepochs <- 30                                       # 30 epochs
 nsteps_per_epoch <- floor(N_Data_Train / N_Batch)   # number of steps per epoch (4275)
 init_learning_rate <- 0.00005                       # learning rate for CNN weights

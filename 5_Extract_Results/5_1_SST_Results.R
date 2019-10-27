@@ -113,9 +113,13 @@ for(zone in 1:nZones) {
 
     ## Plot time series of diagnostics
     png(paste0("./img/ResultsTS_Zone", zone, ".png"), width = 1200, height = 400)
-    g1 <- ggplot(filter(FilterResults, zone == this_zone)) +
+    g1 <- ggplot(filter(FilterResults,
+                        zone == this_zone &
+                        !is.na(RMSPE))) +
           geom_line(aes(x = time, y = RMSPE, colour = method)) + theme_bw()
-    g2 <- ggplot(filter(FcastResults, zone == this_zone)) +
+    g2 <- ggplot(filter(FcastResults,
+                        zone == this_zone &
+                        !is.na(RMSPE))) +
         geom_line(aes(x = time, y = RMSPE, colour = method)) + theme_bw()
     print(grid.arrange(g1, g2, nrow = 1))
     dev.off()  
@@ -145,10 +149,10 @@ FcastResults_long <- group_by(FcastResults_long, time, zone, Diagnostic) %>%
 ## Remove outliers in the results
 FilterResults_long2 <-
     FilterResults_long %>% group_by(method, zone, Diagnostic) %>%
-     filter(Value > quantile(Value, 0.00, na.rm = TRUE) & Value < quantile(Value, 1, na.rm = TRUE))
+     filter(Value > quantile(Value, 0.00, na.rm = TRUE) & Value < 2)
 FcastResults_long2 <-
     FcastResults_long %>% group_by(method, zone, Diagnostic) %>%
-     filter(Value > quantile(Value, 0.00, na.rm = TRUE) & Value < quantile(Value, 1, na.rm = TRUE))
+     filter(Value > quantile(Value, 0.00, na.rm = TRUE) & Value < 2)
 
 ## Rename the diagnostics
 FilterResults_long2 <- mutate(FilterResults_long2,

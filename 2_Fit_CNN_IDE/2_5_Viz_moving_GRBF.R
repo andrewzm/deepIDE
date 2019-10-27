@@ -33,10 +33,10 @@ for(i in 1:length(All_Vars_tf)) {
 convfilter_u <- tf$trainable_variables(scope = NULL)[[1]]
 convfilter_v <- tf$transpose(convfilter_u, perm = c(1L, 0L, 2L, 3L))
 conv1 <- conv(data_in, 3L, N_Filters, convwts = convfilter_v) # 32 x 32 x 16
-set.seed(5)
+set.seed(2)
 
 ## Do ten sequences
-for(i in 1:10) {
+for(i in 1:2) {
   
   ## Centres,directions, and SD of GRBF
   s1c <- runif(1, min = 0.25, max = 0.75)

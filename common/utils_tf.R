@@ -119,17 +119,6 @@ KL_tf <- function(mu1, S1, mu2, S2) {
   tf$constant(0.5, dtype = "float32") * (Part1 + Part2 + Part3 + Part4)
 }
 
-#' @title Set TensorFlow seed
-#' @description Set TensorFlow seed in deepspat package
-#' @param seed the seed
-#' @export
-#' @examples
-#' set_deepspat_seed(1L)
-set_deepspat_seed <- function(seed = 1L) {
-  tf$set_random_seed(seed)
-  invisible()
-}
-
 k_tf1 <- function(s, r, w, D) {
   d1 <- tf$square(s[, 1] - w[, 1, drop = FALSE] - r[, 1, drop = FALSE])
   d2 <- tf$square(s[, 2] - w[, 2, drop = FALSE] - r[, 2, drop = FALSE])
@@ -175,6 +164,13 @@ tf_cov <- function(x, y = x, thisN_Batch) {
     diffy <- y - my
     vx <- tf$matmul(tf$transpose(diffx), diffy) / (tf$cast(thisN_Batch, tf$float32) - 1)
 }
+
+## Set tensorflow seed
+set_tf_seed <- function(seed = 1L) {
+  tf$set_random_seed(seed)
+  invisible()
+}
+
 
 tfconst <- function(x, name = NULL) tf$constant(x, dtype = "float32", name = name)
 tfVar <- function(x, name = NULL) tf$Variable(x, dtype = "float32", name = name)

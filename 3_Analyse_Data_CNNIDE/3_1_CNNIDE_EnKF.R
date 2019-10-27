@@ -169,8 +169,9 @@ for(zone in 1L:nZones) {
     run(tf$assign(log_sigma2, log_sigma2_zone_all[[zone]]))
     run(tf$assign(log_rho, log_rho_zone_all[[zone]]))
 
-    set.seed(zone)                  # set seed
-    
+    set.seed(zone)                  # set R seed
+    set_tf_seed(zone)               # set TF seed
+      
     ## Set time axis
     test_zones_dates <- filter(Date_Zone_Map,
                                year(startdate) == "2018" &
@@ -252,35 +253,26 @@ for(zone in 1L:nZones) {
     ## Ignore the first three time points (init. condition)
     if(i > tau) {
       
-      ## Since the system is nonlinera, run the EnKF a couple of times,
-      ## on each sequence to help improve the inferred dynamics
-      for(kk in 1:2) {
-
-        ## Update using the current Pframe
-        ## Note that "tau" corresponds to "t - 1", "tau - 1" to "t - 2", etc.
-        fd <- dict(data_in = Pframe,
-                   data_current = Pframe[,,,tau],
-                   data_previous = Pframe[,,,tau - 1],
-                   C_tf = as.matrix(C[[i]]),
-                   Z_tf = as.matrix(Z[[i]]),
-                   normvars_process = array(rnorm(W*H*nParticles), dim = c(nParticles, W*H, 1L)),
-                   normvars_obs1 = array(rnorm(nObs*nParticles), dim = c(nParticles, nObs, 1L)),
-                   normvars_obs2 = array(rnorm(nObs*nParticles), dim = c(nParticles, nObs, 1L)))
+      ## Update using the current Pframe
+      ## Note that "tau" corresponds to "t - 1", "tau - 1" to "t - 2", etc.
+      fd <- dict(data_in = Pframe,
+                 data_current = Pframe[,,,tau],
+                 data_previous = Pframe[,,,tau - 1],
+                 C_tf = as.matrix(C[[i]]),
+                 Z_tf = as.matrix(Z[[i]]),
+                 normvars_process = array(rnorm(W*H*nParticles), dim = c(nParticles, W*H, 1L)),
+                 normvars_obs1 = array(rnorm(nObs*nParticles), dim = c(nParticles, nObs, 1L)),
+                 normvars_obs2 = array(rnorm(nObs*nParticles), dim = c(nParticles, nObs, 1L)))
         
-        ## Extract forecast and updated ensemble
-        ParticleUpdates <- run(list(Ypred_noisy, Ypred_updated, Ysmooth1, Ysmooth2),
-                               feed_dict = fd)
+      ## Extract new state
+      ParticleUpdates <- run(list(Ypred_noisy, Ypred_updated, Ysmooth1, Ysmooth2),
+                             feed_dict = fd)
         
-        ## Do not use smoothed data when forecasting just do it for kk == 1
-        if(kk == 1) ParticleForecasts <- ParticleUpdates[[1]]
-        ParticlePreds <- ParticleUpdates[[2]]
-        ParticleSmooth1 <- ParticleUpdates[[3]]
-        ParticleSmooth2 <- ParticleUpdates[[4]]
+      ParticleForecasts <- ParticleUpdates[[1]]
+      ParticlePreds <- ParticleUpdates[[2]]
+      ParticleSmooth1 <- ParticleUpdates[[3]]
+      ParticleSmooth2 <- ParticleUpdates[[4]]
 
-        Pframe[,,,tau] <-  array(c(ParticleSmooth1), c(nParticles, W, H, 1))
-        Pframe[,,,tau - 1] <-  array(c(ParticleSmooth2), c(nParticles, W, H, 1))
-      }
-      
       ## Redo with Pframe2 for two-day ahead forecast (same time point, just with un-updated ensemble at t-1)
       if(two_step_fcasts) {
         fd2 <- dict(data_in = Pframe2,
