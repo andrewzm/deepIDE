@@ -1,6 +1,6 @@
 # Deep Integro-Difference Equation Models for Spatio-Temporal Forecasting
 
-<img align="right" src="https://github.com/andrewzm/deepIDE/blob/master/2_Fit_CNN_IDE/img/BallResults1.png" alt="drawing" width="400"/>
+<img align="right" src="https://github.com/andrewzm/deepIDE/blob/master/2_Fit_CNN_IDE/img/BallResults2.png" alt="drawing" width="400"/>
 
 
 This GitHub page provides code for reproducing the results in the manuscript titled *Deep Integro-Difference Equation Models for Spatio-Temporal Forecasting* by A. Zammit-Mangion and C.K. Wikle. The manuscript describes the use of Convolution Neural Networks (CNNs) to learn about the dynamic evolution of environmental processes. Once the CNN is trained using analyses data (i.e., full, complete, data) of a certain phenomenon, it can be used within statistical models for analysing or forecasting other environmental phenomena that exhibit similar physical behaviour.
