@@ -138,7 +138,7 @@ for(zone in 1L:nZones) {
     load(paste0("../3_Analyse_Data_CNNIDE/intermediates/kinit_zone", zone, ".rda"))
   } else {
     load("../3_Analyse_Data_CNNIDE/intermediates/Results_CNNIDE_Radar.rda")
-    load("../3_Analyse_Data_CNNIDE/intermediates/KernelInit/kinit_Radar.rda")
+    load("../3_Analyse_Data_CNNIDE/intermediates/kinit_Radar.rda")
   }
   taxis <- taxis_df$idx
   results_IDE <- list()
