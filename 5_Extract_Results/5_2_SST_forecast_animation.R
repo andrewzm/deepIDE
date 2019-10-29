@@ -10,7 +10,8 @@ library("dplyr")
 library("ggplot2")
 library("grid")
 library("gridExtra")
-source("../common/utils.R")
+library("R.utils")
+sourceDirectory("../common/")
 
 ## Plot in zone 1
 plot_zone <- 1
